@@ -175,6 +175,109 @@ function loadTheme(){const s=localStorage.getItem('lfTheme')||'dark';document.do
 function copyPix(){navigator.clipboard.writeText('61999487649').then(()=>{const a=document.getElementById('pixCopy');const b=document.getElementById('pixCopy2');if(a) a.textContent='✅';if(b) b.textContent='✅ Copiado!';setTimeout(()=>{if(a) a.textContent='📋';if(b) b.textContent='📋 Copiar';},2000);});}
 let hist=[];const NI=[1,3,5,7,9,11,13,15,17,19,21,23,25];const NP=[2,4,6,8,10,12,14,16,18,20,22,24];let duplaOficial=null;
 function logM0(msg){const el=document.getElementById('logM0');if(el) el.value=new Date().toLocaleTimeString()+' '+msg+'\n'+el.value;}
+
+function logM0(msg){const el=document.getElementById('logM0');if(el) el.value=new Date().toLocaleTimeString()+' '+msg+'\n'+el.value;}
+
+// === NOVO PARSER UNIVERSAL - ACEITA COLA SUJA DA CAIXA ===
+function extrairDezenasGrudadas(str){
+// Detecta 010208101112... 30 dígitos grudados = 15 dezenas
+ let limpo = str.replace(/[^0-9]/g,'');
+ // Se tem 30 dígitos e cada par 01-25
+ if(limpo.length >= 30){
+   // Pega últimos 30 dígitos (caso tenha concurso grudado antes)
+   let ult30 = limpo.slice(-30);
+   let dezenas = [];
+   for(let i=0;i<30;i+=2){
+     let n = parseInt(ult30.substr(i,2));
+     if(n>=1 && n<=25) dezenas.push(n);
+   }
+   if(dezenas.length==15) return dezenas.sort((a,b)=>a-b);
+ }
+ // Se tem menos, tenta quebrar 2 em 2 e validar 01-25
+ if(limpo.length >= 20){
+   let dezenas=[];
+   for(let i=0;i<limpo.length;i+=2){
+     let n=parseInt(limpo.substr(i,2));
+     if(n>=1 && n<=25) dezenas.push(n);
+     if(dezenas.length==15) break;
+   }
+   if(dezenas.length==15) return dezenas.sort((a,b)=>a-b);
+ }
+ return null;
+}
+
+function parseDez(str){
+ if(!str) return [];
+ // 1 - tenta formato grudado da Caixa 0102081011...
+ let grudadas = extrairDezenasGrudadas(str);
+ if(grudadas && grudadas.length==15) return grudadas;
+ // 2 - formato normal com virgula, espaço, ponto-e-virgula
+ return str.split(/[,;\s\n\r\t\-]+/).map(x=>parseInt(x)).filter(x=>!isNaN(x)&&x>=1&&x<=25).slice(0,15).sort((a,b)=>a-b);
+}
+
+function importarCola(){
+ const txt=document.getElementById('colaSuja').value.trim();
+ if(!txt){alert('Cole algo');return;}
+ // Limpa sukeiras da Caixa
+ let textoLimpo = txt.replace(/Concurso/gi,'').replace(/Sorteio realizado[\s\S]*?SP/gi,'').replace(/Buscar por concurso[\s\S]*?Próximo/gi,'').replace(/[<>]/g,' ');
+ const linhas=textoLimpo.split('\n');
+ let novos=0;
+ linhas.forEach(l=>{
+   l=l.trim();
+   if(!l) return;
+   // Tenta extrair concurso: 3784 (20/09/2026) ou 3784 20/09/2026
+   let mConc = l.match(/(\d{3,5})\s*\(?(\d{2}\/\d{2}\/\d{4})\)?/);
+   let conc = mConc? parseInt(mConc[1]) : null;
+   let data = mConc && mConc[2]? mConc[2] : new Date().toLocaleDateString('pt-BR');
+   // Tenta extrair dezenas de qualquer formato na mesma linha
+   let dez = parseDez(l);
+   // Se não achou na linha, pode ser que concurso e dezenas estão em linhas separadas
+   // Ex: linha 1 = "3784 (20/09/2026)" linha 2 = "0102081011..."
+   // Nesse caso dez.length <15, vamos tentar próxima linha na próxima iteração
+   // Mas aqui já tenta pegar 30 dígitos grudados
+   if(dez.length!=15){
+     // tenta pegar só os números da linha mesmo se misturado
+     let soNumeros = l.replace(/[^0-9]/g,' ');
+     dez = parseDez(soNumeros);
+   }
+   if(dez.length!=15) return;
+   if(!conc){
+     // se não achou concurso, gera um provisório
+     conc = hist.length? Math.max(...hist.map(h=>h.conc))+1+novos : 1;
+   }
+   if(hist.find(h=>h.conc==conc)) return;
+   const aus=[];for(let i=1;i<=25;i++) if(!dez.includes(i)) aus.push(i);
+   const deltaI=aus.filter(x=>NI.includes(x));const deltaP=aus.filter(x=>NP.includes(x));
+   const niHits=dez.filter(x=>NI.includes(x)).length;const npHits=dez.filter(x=>NP.includes(x)).length;const pa=12-npHits;
+   hist.push({conc,data,dez,aus,deltaI,deltaP,niHits,npHits,pa});novos++;
+ });
+ // Caso especial: cola veio em 2 linhas: linha concurso + linha dezenas grudadas
+ // Se nada importou, tenta parser de bloco
+ if(novos==0){
+   let blocos = textoLimpo.split(/\n+/);
+   for(let i=0;i<blocos.length;i++){
+     let linha = blocos[i];
+     let mConc = linha.match(/(\d{3,5})\s*\(?(\d{2}\/\d{2}\/\d{4})\)?/);
+     if(mConc && i+1<blocos.length){
+       let prox = blocos[i+1];
+       let dez = parseDez(prox);
+       if(dez.length==15){
+         let conc = parseInt(mConc[1]); let data=mConc[2];
+         if(hist.find(h=>h.conc==conc)) continue;
+         const aus=[];for(let k=1;k<=25;k++) if(!dez.includes(k)) aus.push(k);
+         const deltaI=aus.filter(x=>NI.includes(x));const deltaP=aus.filter(x=>NP.includes(x));
+         const niHits=dez.filter(x=>NI.includes(x)).length;const npHits=dez.filter(x=>NP.includes(x)).length;const pa=12-npHits;
+         hist.push({conc,data,dez,aus,deltaI,deltaP,niHits,npHits,pa});novos++;i++;
+       }
+     }
+   }
+ }
+ hist.sort((a,b)=>a.conc-b.conc);recalcularMedia3();salvarLocal();
+ logM0(`IMPORTADOS ${novos} - Limpo: ${hist.length? hist[hist.length-1].conc+' ('+hist[hist.length-1].data+') '+hist[hist.length-1].dez.map(x=>String(x).padStart(2,'0')).join(',') : 'nenhum'}`);
+ if(novos==0) alert('Nada importado. Cole ex: 3784 (20/09/2026) 01,02,08,10,11,12,15,16,18,19,20,21,22,24,25 OU 010208101112151618192021222425');
+ renderAll();
+}
+
 function parseDez(str){return str.split(/[,;\s]+/).map(x=>parseInt(x)).filter(x=>!isNaN(x)&&x>=1&&x<=25).slice(0,15).sort((a,b)=>a-b);}
 function importarCola(){const txt=document.getElementById('colaSuja').value.trim();const linhas=txt.split('\n');let novos=0;linhas.forEach(l=>{const m=l.match(/(\d{3,4}).*?(\d{2}\/\d{2}\/\d{4})?.*?((?:\d{1,2}[,\s]+){14}\d{1,2})/);if(!m) return;const conc=parseInt(m[1]);const data=m[2]||'01/01/2020';const dez=parseDez(m[3]);if(dez.length!=15) return;if(hist.find(h=>h.conc==conc)) return;const aus=[];for(let i=1;i<=25;i++) if(!dez.includes(i)) aus.push(i);const deltaI=aus.filter(x=>NI.includes(x));const deltaP=aus.filter(x=>NP.includes(x));const niHits=dez.filter(x=>NI.includes(x)).length;const npHits=dez.filter(x=>NP.includes(x)).length;const pa=12-npHits;hist.push({conc,data,dez,aus,deltaI,deltaP,niHits,npHits,pa});novos++;});hist.sort((a,b)=>a.conc-b.conc);recalcularMedia3();salvarLocal();logM0(`IMPORTADOS ${novos}`);renderAll();}
 function adicionarConcurso(){const conc=parseInt(document.getElementById('nConc').value);const data=document.getElementById('nData').value||new Date().toLocaleDateString('pt-BR');const dez=parseDez(document.getElementById('nDez').value);if(!conc||dez.length!=15){alert('Conc e 15 dez obrig');return;}if(hist.find(h=>h.conc==conc)){alert('Já existe, use Editar');return;}const aus=[];for(let i=1;i<=25;i++) if(!dez.includes(i)) aus.push(i);const deltaI=aus.filter(x=>NI.includes(x));const deltaP=aus.filter(x=>NP.includes(x));const niHits=dez.filter(x=>NI.includes(x)).length;const npHits=dez.filter(x=>NP.includes(x)).length;const pa=12-npHits;hist.push({conc,data,dez,aus,deltaI,deltaP,niHits,npHits,pa});hist.sort((a,b)=>a.conc-b.conc);recalcularMedia3();salvarLocal();logM0(`ADICIONADO ${conc}`);renderAll();}
