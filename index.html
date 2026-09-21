@@ -120,9 +120,10 @@ table{border-collapse:collapse;width:100%;font-size:11px} th,td{border:1px solid
 <div id="m6" class="box"><div class="box-header" onclick="toggleBox('m6')"><h2>🟢 M6 - MONTAGEM AUTOMÁTICA DE JOGOS - 3 NÚCLEOS</h2><span>▼</span></div><div class="box-content"><div id="m6out"></div><div id="m6alerta" style="margin:8px 0"></div><button class="btn btn-green" onclick="gerarAutomatico()">🎯 GERAR AUTOMÁTICO PELO SINAL</button><button class="btn btn-blue" onclick="gerarNiPuro()">🎲 ni+2p 15 jogos</button><button class="btn btn-yellow" onclick="gerarNiDesdobrado()">🔥 ni(a;b)+3p 40 jogos QUEBRA 11</button><button class="btn btn-red" onclick="gerarNp()">⚡ np+3i 4 jogos INVERSOR</button><button class="btn btn-purple" onclick="gerarPremium()">💎 PREMIUM 44 jogos 62% 11pts</button><div id="m6jogos" style="max-height:500px;overflow:auto"></div></div></div>
 <div id="m7" class="box"><div class="box-header" onclick="toggleBox('m7')"><h2>🟢 M7 - CASCO DA TARTARUGA - 3 NÚCLEOS</h2><span>▼</span></div><div class="box-content"><div id="m7out"></div></div></div>
 <div id="m8" class="box" style="border-color:var(--red)"><div class="box-header" onclick="toggleBox('m8')"><h2>🔴 M8 - CONFERÊNCIA COMPLETA - PERDAS/LUCROS ATUAL E REMANESCENTES <span class="badge badge-red">VERMELHO PREJUÍZO</span> <span class="badge badge-green">VERDE LUCRO</span></h2><span>▼</span></div><div class="box-content">
-<h3>8.1 Jogos Gerados</h3><textarea id="jogosConferir"></textarea>
+<h3>8.1 Jogos Gerados <span id="infoJogosGeradosM8" style="color:var(--yellow)">(0 jogos)</span> <span id="infoConcDestinoM8" style="color:var(--green);background:var(--bg2);padding:2px 6px;border-radius:4px">- Aguardando geração</span></h3>
+<textarea id="jogosConferir" style="min-height:220px;height:260px;background:#000;color:#0f0;border:2px solid var(--green);font-size:12px;line-height:1.5"></textarea>
+<div id="infoExtraM8" style="font-size:11px;color:var(--text2);margin:4px 0 10px 0"></div>
 <h3>8.2 Concurso Sorteado</h3>
-
 <div class="flex" style="flex-direction:column;gap:6px">
 <textarea id="colaSujaM8" placeholder="Cole aqui sujo da Caixa ex:
 Concurso 3784 (20/09/2026)
@@ -351,20 +352,37 @@ function gerarPremium(){const ult=hist[hist.length-1];const combosI=getCombos(ul
 
 function renderJogosLista(txt){
  const linhas=txt.split('\n').filter(x=>x.trim());
- let h=`<b>Total ${linhas.length} R$${(linhas.length*parseFloat(document.getElementById('valorAposta').value||3.5)).toFixed(2)}</b><br>`;
+ const ultConc = hist.length ? hist[hist.length-1].conc : 0;
+ const proxConc = ultConc + 1;
+ const valor = parseFloat(document.getElementById('valorAposta').value||3.5);
+ const custo = linhas.length * valor;
+ let h=`<b>Total ${linhas.length} jogos - R$${custo.toFixed(2)} - Para Concurso ${proxConc}</b><br>`;
  linhas.forEach((l,i)=>{h+=`<div class="jogo">${i+1}: ${l}</div>`;});
  document.getElementById('m6jogos').innerHTML=h;
- document.getElementById('m6out').innerHTML=`Gerados ${linhas.length} jogos. Enviado automático para M8 8.1 e M9. Use M8 para conferir.`;
- // === ETAPA 4 - ENVIO AUTOMÁTICO PARA M8 8.1 E M9 ===
- // M9 recebe limpo 01,02,03...
+ document.getElementById('m6out').innerHTML=`✅ Gerados ${linhas.length} jogos para Concurso ${proxConc} (último hist ${ultConc}). Enviado automático para M8 8.1 e M9.`;
+
+ // === ENVIO AUTOMÁTICO PARA M8 8.1 E M9 + LF-VOLANTE COM CONCURSO ===
  document.getElementById('exportJogos').value = linhas.join('\n');
- // M8 8.1 recebe numerado 1: 01,02,03... que é o que o user mostrou na foto
  document.getElementById('jogosConferir').value = linhas.map((l,i)=>`${i+1}: ${l}`).join('\n');
- // Opcional: dá um scroll suave até M8 depois de 600ms para o user ver que foi
+
+ // ATUALIZA CABEÇALHO M8 8.1 COM QUANTIDADE E CONCURSO DESTINO (resolve seu bug da foto)
+ const elQtd = document.getElementById('infoJogosGeradosM8');
+ const elConc = document.getElementById('infoConcDestinoM8');
+ const elExtra = document.getElementById('infoExtraM8');
+ if(elQtd) elQtd.innerText = `(${linhas.length} jogos - R$${custo.toFixed(2)})`;
+ if(elConc) elConc.innerText = `→ Para Concurso ${proxConc} (objetivo)`;
+ if(elExtra) elExtra.innerHTML = `📊 <b>${linhas.length} jogos</b> gerados no M6 para jogar no concurso <b style="color:var(--green)">${proxConc}</b>. Último histórico: ${ultConc}. Use M8 8.2 para conferir quando sair o resultado ${proxConc}. <br>➡️ Já enviado para M9 e para Volante.`;
+
+ // SALVA PARA VOLANTE COM CONCURSO
+ try{
+   localStorage.setItem('LF_VOLANTE_COLA', linhas.join('\n'));
+   localStorage.setItem('LF_CONCURSO_DESTINO', String(proxConc));
+   localStorage.setItem('LF_QTD_JOGOS', String(linhas.length));
+   localStorage.setItem('LF_ULT_HIST', String(ultConc));
+ }catch(e){}
+
  setTimeout(()=>{ const el=document.getElementById('m8'); if(el) el.scrollIntoView({behavior:'smooth',block:'start'}); }, 600);
 }
-
-
 function importarColaM8(){
  const raw = document.getElementById('colaSujaM8').value.trim();
  if(!raw){alert('Cole sujo da Caixa no M8');return;}
@@ -417,7 +435,12 @@ function enviarParaVolante(){
   }
   // Tenta salvar localStorage (só funciona se os 2 sites forem github.io)
   try{ localStorage.setItem('LF_VOLANTE_COLA', txt); }catch(e){}
-
+  try{
+    const ultConc = hist.length ? hist[hist.length-1].conc : '';
+    const proxConc = ultConc ? ultConc+1 : '';
+    if(proxConc) localStorage.setItem('LF_CONCURSO_DESTINO', String(proxConc));
+    localStorage.setItem('LF_QTD_JOGOS', String(txt.split('\n').filter(l=>l.trim()).length));
+  }catch(e){}
   // Copia para área de transferência também
   try{ navigator.clipboard.writeText(txt); }catch(e){}
 
