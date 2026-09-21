@@ -331,9 +331,42 @@ function restaurarBackup(input){const file=input.files[0];if(!file) return;const
 function exportarTXT(){if(!hist.length) return alert('Nada');let txt=hist.map(o=>`${o.conc} (${o.data}) ${o.dez.map(x=>String(x).padStart(2,'0')).join(',')}`).join('\n');const blob=new Blob([txt],{type:'text/plain'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='LF_HIST_'+Date.now()+'.txt';a.click();}
 function exportarJogosTXT(){const txt=document.getElementById('exportJogos').value;if(!txt.trim()) return alert('Nenhum jogo');const blob=new Blob([txt],{type:'text/plain'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='LF_JOGOS_'+Date.now()+'.txt';a.click();}
 function renderAll(){renderM0();renderM1();renderM2();renderM3();renderM4();renderM5();renderM7();}
-function renderM0(){let h=`<table><tr><th>Conc</th><th>Data</th><th>15dz</th><th>ni</th><th>np</th><th>PA</th><th>m3</th><th>AUS</th><th>∆I</th><th>∆P</th><th>Ação</th></tr>`;hist.forEach(o=>{h+=`<tr><td>${o.conc}</td><td>${o.data}</td><td>${o.dez.map(x=>String(x).padStart(2,'0')).join(',')}</td><td>${o.niHits}</td><td>${o.npHits}</td><td>${o.pa}</td><td>${o.media3?o.media3.toFixed(1):'-'}</td><td>${o.aus.map(x=>String(x).padStart(2,'0')).join(' ')}</td><td>∆${o.deltaI.length}i:${o.deltaI.map(x=>String(x).padStart(2,'0')).join(' ')}</td><td>∆${o.deltaP.length}p:${o.deltaP.map(x=>String(x).padStart(2,'0')).join(' ')}</td><td><button onclick="carregarParaEdicao(${o.conc})">✏️</button><button onclick="excluirDireto(${o.conc})">🗑️</button></td></tr>`;});h+=`</table>Total:${hist.length} Ult PA=${hist[hist.length-1]?.pa||'-'} m3=${hist[hist.length-1]?.media3?.toFixed(1)||'-'}`;document.getElementById('m0out').innerHTML=h;}
-function carregarParaEdicao(conc){const o=hist.find(x=>x.conc==conc);if(!o) return;document.getElementById('nConc').value=o.conc;document.getElementById('nData').value=o.data;document.getElementById('nDez').value=o.dez.map(x=>String(x).padStart(2,'0')).join(',');}
-function excluirDireto(conc){document.getElementById('nConc').value=conc;excluirConcurso();}
+function renderM0(){
+  let h=`<div class="flex no-print" style="margin-bottom:8px;gap:8px;align-items:center"><button class="btn btn-red" onclick="excluirSelecionados()">🗑️ Excluir Marcados</button><button class="btn btn-yellow" onclick="document.querySelectorAll('.chkConc').forEach(c=>c.checked=false);const a=document.getElementById('chkAll');if(a)a.checked=false;atualizaContagemM0()">❌ Desmarcar Todos</button><span id="infoSelectM0" style="font-size:11px;color:var(--yellow);font-weight:800"></span></div><table><tr><th><input type="checkbox" id="chkAll" onclick="toggleSelectAll(this)" title="Marcar todos"></th><th>Conc</th><th>Data</th><th>15dz</th><th>ni</th><th>np</th><th>PA</th><th>m3</th><th>AUS</th><th>∆I</th><th>∆P</th><th>Ação</th></tr>`;
+  hist.forEach(o=>{
+    h+=`<tr><td><input type="checkbox" class="chkConc" value="${o.conc}" onchange="atualizaContagemM0()"></td><td>${o.conc}</td><td>${o.data}</td><td>${o.dez.map(x=>String(x).padStart(2,'0')).join(',')}</td><td>${o.niHits}</td><td>${o.npHits}</td><td>${o.pa}</td><td>${o.media3?o.media3.toFixed(1):'-'}</td><td>${o.aus.map(x=>String(x).padStart(2,'0')).join(' ')}</td><td>∆${o.deltaI.length}i:${o.deltaI.map(x=>String(x).padStart(2,'0')).join(' ')}</td><td>∆${o.deltaP.length}p:${o.deltaP.map(x=>String(x).padStart(2,'0')).join(' ')}</td><td><button class="btn btn-red" style="padding:4px 8px;font-size:12px" onclick="excluirDireto(${o.conc})">🗑️</button></td></tr>`;
+  });
+  h+=`</table>Total:${hist.length} Ult PA=${hist[hist.length-1]?.pa||'-'} m3=${hist[hist.length-1]?.media3?.toFixed(1)||'-'}`;
+  document.getElementById('m0out').innerHTML=h;
+  atualizaContagemM0();
+}
+function toggleSelectAll(el){
+  document.querySelectorAll('.chkConc').forEach(c=>c.checked=el.checked);
+  atualizaContagemM0();
+}
+function atualizaContagemM0(){
+  const q=document.querySelectorAll('.chkConc:checked').length;
+  const info=document.getElementById('infoSelectM0');
+  if(info) info.innerText = q? `${q} marcado(s) para exclusão` : '';
+}
+function excluirDireto(conc){
+  if(!confirm(`Excluir concurso ${conc}? Essa ação não tem volta.`)) return;
+  hist=hist.filter(x=>x.conc!=conc);
+  salvarLocal();
+  recalcularMedia3();
+  renderAll();
+  logM0(`🗑️ Excluído ${conc}`);
+}
+function excluirSelecionados(){
+  const sel=[...document.querySelectorAll('.chkConc:checked')].map(c=>parseInt(c.value));
+  if(!sel.length){ alert('Marque ao menos 1 concurso com o checkbox da esquerda'); return; }
+  if(!confirm(`Excluir ${sel.length} concursos?\n${sel.join(', ')}\n\nNão tem volta.`)) return;
+  hist=hist.filter(o=>!sel.includes(o.conc));
+  salvarLocal();
+  recalcularMedia3();
+  renderAll();
+  logM0(`🗑️ Excluídos ${sel.length} concursos: ${sel.join(', ')}`);
+}
 function renderM1(){if(!hist.length){document.getElementById('m1out').innerHTML='Aguardando';return;}let freq={};for(let i=1;i<=25;i++) freq[i]=0;let atraso={};for(let i=1;i<=25;i++) atraso[i]=0;hist.forEach(o=>o.dez.forEach(d=>freq[d]++));for(let n=1;n<=25;n++){let a=0;for(let i=hist.length-1;i>=0;i--){if(hist[i].dez.includes(n)) break;a++;}atraso[n]=a;}let h=`<table><tr><th>Dez</th><th>Freq</th><th>Atr</th><th>Tipo</th><th>Fraco</th><th>%</th></tr>`;for(let n=1;n<=25;n++){let tipo=NI.includes(n)?'13i':'12p';let fraco=atraso[n]*1.5+(1/(freq[n]||1))*10;let perc=(freq[n]/hist.length*100).toFixed(1);h+=`<tr><td>${String(n).padStart(2,'0')}</td><td>${freq[n]}</td><td>${atraso[n]}</td><td>${tipo}</td><td>${fraco.toFixed(2)}</td><td>${perc}%</td></tr>`;}h+=`</table>`;let rankI=NI.map(n=>({n,freq:freq[n],atraso:atraso[n],fraco:atraso[n]*1.5+(1/(freq[n]||1))*10})).sort((a,b)=>b.fraco-a.fraco);let rankP=NP.map(n=>({n,freq:freq[n],atraso:atraso[n],fraco:atraso[n]*1.5+(1/(freq[n]||1))*10})).sort((a,b)=>b.fraco-a.fraco);h+=`<br>Ranking I:${rankI.map(o=>String(o.n).padStart(2,'0')+'('+o.fraco.toFixed(1)+')').join(' ')}<br>Ranking P:${rankP.map(o=>String(o.n).padStart(2,'0')+'('+o.fraco.toFixed(1)+')').join(' ')}`;document.getElementById('m1out').innerHTML=h;window.freqData={freq,atraso,rankI,rankP};}
 function renderM2(){if(!hist.length){document.getElementById('m2out').innerHTML='Aguardando';return;}const ult=hist[hist.length-1];let sinal='',classe='',texto='';if(ult.pa>=6){sinal='PAR';classe='alert-par';texto=`PA=${ult.pa} ALTO → PAR np+3i 4 jogos R$14 - <span class="badge badge-red">VERMELHO</span>`;}else if(ult.pa<=4){sinal='ÍMPAR';classe='alert-impar';texto=`PA=${ult.pa} BAIXO → ÍMPAR ni(a;b)+3p 40 jogos R$140 - <span class="badge badge-green">VERDE</span>`;}else{sinal='NEUTRO';classe='alert-neutro';texto=`PA=${ult.pa} NEUTRO m3=${ult.media3.toFixed(1)} → AMBOS 44 jogos R$154 - <span class="badge badge-yellow">AMARELA</span>`;}let h=`<div class="alert ${classe}">SINAL: ${sinal} - ${texto}</div>`;document.getElementById('m2out').innerHTML=h;document.getElementById('m6alerta').innerHTML=h;window.sinalAtual=sinal;}
 function renderM3(){if(!hist.length){document.getElementById('m3out').innerHTML='Aguardando';return;}const ult=hist[hist.length-1];let h=`AUS:${ult.aus.map(x=>String(x).padStart(2,'0')).join(' ')}<br>∆I ${ult.deltaI.length}:${ult.deltaI.map(x=>String(x).padStart(2,'0')).join(' ')} C=${comb(ult.deltaI.length,3)} | ∆P ${ult.deltaP.length}:${ult.deltaP.map(x=>String(x).padStart(2,'0')).join(' ')} C2=${comb(ult.deltaP.length,2)} C3=${comb(ult.deltaP.length,3)}`;document.getElementById('m3out').innerHTML=h;}
