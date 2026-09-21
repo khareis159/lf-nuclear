@@ -121,7 +121,28 @@ table{border-collapse:collapse;width:100%;font-size:11px} th,td{border:1px solid
 <div id="m7" class="box"><div class="box-header" onclick="toggleBox('m7')"><h2>🟢 M7 - CASCO DA TARTARUGA - 3 NÚCLEOS</h2><span>▼</span></div><div class="box-content"><div id="m7out"></div></div></div>
 <div id="m8" class="box" style="border-color:var(--red)"><div class="box-header" onclick="toggleBox('m8')"><h2>🔴 M8 - CONFERÊNCIA COMPLETA - PERDAS/LUCROS ATUAL E REMANESCENTES <span class="badge badge-red">VERMELHO PREJUÍZO</span> <span class="badge badge-green">VERDE LUCRO</span></h2><span>▼</span></div><div class="box-content">
 <h3>8.1 Jogos Gerados</h3><textarea id="jogosConferir"></textarea>
-<h3>8.2 Concurso Sorteado</h3><div class="flex"><input id="confConc" placeholder="Conc 3783" type="number"><input id="confData" placeholder="Data" style="width:120px"><input id="confDez" placeholder="15 dezenas sorteadas" style="width:350px"></div>
+<h3>8.2 Concurso Sorteado</h3>
+
+<div class="flex" style="flex-direction:column;gap:6px">
+<textarea id="colaSujaM8" placeholder="Cole aqui sujo da Caixa ex:
+Concurso 3784 (20/09/2026)
+Buscar por concurso
+Ex: 1475
+< AnteriorPróximo >
+Sorteio realizado no ESPAÇO DA SORTE em SÃO PAULO, SP
+010208101112151618192021222425" style="min-height:85px;background:var(--bg);color:var(--green);border:2px solid var(--border);border-radius:8px;padding:8px;font-family:monospace;font-size:11px"></textarea>
+<div class="flex">
+<button class="btn btn-green" onclick="importarColaM8()">📥 IMPORTAR COLA M8 -> LIMPAR</button>
+<button class="btn btn-yellow" onclick="document.getElementById('colaSujaM8').value='';limparConferenciaM8Campos();">🧹 LIMPAR M8</button>
+<span id="logM8" style="font-size:10px;color:var(--yellow);margin-left:8px"></span>
+</div>
+<div class="flex">
+<input id="confConc" placeholder="Conc 3784" type="number" style="width:110px;background:var(--bg3)">
+<input id="confData" placeholder="20/09/2026" style="width:130px;background:var(--bg3)">
+<input id="confDez" placeholder="01,02,08,10,11,12,15,16,18,19,20,21,22,24,25" style="width:360px;background:var(--bg3)">
+</div>
+</div>
+
 <div class="flex"><label>Valor R$<input id="valorAposta" value="3.50" type="number" step="0.5"></label><label>11pts R$<input id="premio11" value="6" type="number"></label><label>12pts R$<input id="premio12" value="12" type="number"></label><label>13pts R$<input id="premio13" value="30" type="number"></label><label>14pts R$<input id="premio14" value="1000" type="number"></label><label>15pts R$<input id="premio15" value="500000" type="number"></label></div>
 <button class="btn btn-green" onclick="conferirJogos()">🔍 CONFERIR - PERDAS/LUCROS</button><button class="btn btn-yellow" onclick="conferirHistoricoCompleto()">📊 CONFERIR HIST 40 - LUCRO REMANESCENTE</button><button class="btn btn-red" onclick="limparConferencia()">🗑️ LIMPAR</button>
 <div id="m8out"></div><div id="m8lucros"></div><div id="m8remanescente"></div>
@@ -308,6 +329,39 @@ function gerarNiDesdobrado(){const ult=hist[hist.length-1];const combos=getCombo
 function gerarNp(){const ult=hist[hist.length-1];const combos=getCombos(ult.deltaI,3);let jogos=[];combos.forEach(c=>{let j=[...NP,...c].sort((a,b)=>a-b);jogos.push(j.map(x=>String(x).padStart(2,'0')).join(','));});document.getElementById('exportJogos').value=jogos.join('\n');renderJogosLista(jogos.join('\n'));logM0(`np+3i ${jogos.length}`);}
 function gerarPremium(){const ult=hist[hist.length-1];const combosI=getCombos(ult.deltaI,3);const combosP=getCombos(ult.deltaP,3);const dupla=duplaOficial||window.duplasOtimas[0];const ni_a=NI.filter(x=>x!=dupla.a);const ni_b=NI.filter(x=>x!=dupla.b);let jogos=[];combosI.forEach(c=>{let j=[...NP,...c].sort((a,b)=>a-b);jogos.push(j.map(x=>String(x).padStart(2,'0')).join(','));});combosP.forEach(c=>{let ja=[...ni_a,...c].sort((a,b)=>a-b);let jb=[...ni_b,...c].sort((a,b)=>a-b);jogos.push(ja.map(x=>String(x).padStart(2,'0')).join(','));jogos.push(jb.map(x=>String(x).padStart(2,'0')).join(','));});document.getElementById('exportJogos').value=jogos.join('\n');renderJogosLista(jogos.join('\n'));logM0(`PREMIUM ${jogos.length}`);}
 function renderJogosLista(txt){const linhas=txt.split('\n').filter(x=>x.trim());let h=`<b>Total ${linhas.length} R$${(linhas.length*parseFloat(document.getElementById('valorAposta').value||3.5)).toFixed(2)}</b><br>`;linhas.forEach((l,i)=>{h+=`<div class="jogo">${i+1}: ${l}</div>`;});document.getElementById('m6jogos').innerHTML=h;document.getElementById('m6out').innerHTML=`Gerados ${linhas.length} jogos. Use M8 para conferir.`;}
+
+function importarColaM8(){
+ const raw = document.getElementById('colaSujaM8').value.trim();
+ if(!raw){alert('Cole sujo da Caixa no M8');return;}
+ // Reusa parseDez e extrairDezenasGrudadas que já corrigimos na Etapa 1
+ let concMatch = raw.match(/(\d{3,5})\s*\(?(\d{2}\/\d{2}\/\d{4})\)?/);
+ let conc = concMatch? parseInt(concMatch[1]) : '';
+ let data = concMatch? concMatch[2] : '';
+ let dez = parseDez(raw);
+ if(dez.length!=15){
+   // tenta achar 30 dígitos
+   let m30 = raw.match(/(\d{30})/);
+   if(m30) dez = parseDez(m30[1]);
+ }
+ if(dez.length!=15){
+   document.getElementById('logM8').textContent='❌ Não achei 15 dezenas';
+   alert('Não achei 15 dezenas. Cole ex: 010208101112151618192021222425');
+   return;
+ }
+ document.getElementById('confConc').value = conc;
+ document.getElementById('confData').value = data;
+ document.getElementById('confDez').value = dez.map(x=>String(x).padStart(2,'0')).join(',');
+ document.getElementById('logM8').textContent = `✅ Limpo: ${conc} (${data}) ${dez.map(x=>String(x).padStart(2,'0')).join(',')}`;
+ logM0(`M8 IMPORTADO ${conc} (${data})`);
+}
+function limparConferenciaM8Campos(){
+ document.getElementById('confConc').value='';
+ document.getElementById('confData').value='';
+ document.getElementById('confDez').value='';
+ document.getElementById('logM8').textContent='';
+ document.getElementById('colaSujaM8').value='';
+}
+
 function conferirJogos(){const jogosTxt=document.getElementById('jogosConferir').value.trim()||document.getElementById('exportJogos').value.trim();const confDez=parseDez(document.getElementById('confDez').value);if(!jogosTxt||confDez.length!=15){alert('Jogos e 15 dez obrig');return;}const valorAposta=parseFloat(document.getElementById('valorAposta').value||3.5);const p11=parseFloat(document.getElementById('premio11').value||6);const p12=parseFloat(document.getElementById('premio12').value||12);const p13=parseFloat(document.getElementById('premio13').value||30);const p14=parseFloat(document.getElementById('premio14').value||1000);const p15=parseFloat(document.getElementById('premio15').value||500000);const linhas=jogosTxt.split('\n').filter(x=>x.trim());let stats={c11:0,c12:0,c13:0,c14:0,c15:0,total:linhas.length};let detalhes=[];linhas.forEach((l,idx)=>{const j=parseDez(l);if(j.length!=15) return;let hits=0;j.forEach(x=>{if(confDez.includes(x)) hits++;});if(hits==11) stats.c11++;if(hits==12) stats.c12++;if(hits==13) stats.c13++;if(hits==14) stats.c14++;if(hits==15) stats.c15++;detalhes.push({idx:idx+1,jogo:j,hits});});let custo=stats.total*valorAposta;let ganho=stats.c11*p11+stats.c12*p12+stats.c13*p13+stats.c14*p14+stats.c15*p15;let lucro=ganho-custo;let h=`<table><tr><th>Acertos</th><th>Qtd</th><th>Unit</th><th>Total</th></tr>`;h+=`<tr><td>11</td><td>${stats.c11}</td><td>R$${p11.toFixed(2)}</td><td>R$${(stats.c11*p11).toFixed(2)}</td></tr><tr><td>12</td><td>${stats.c12}</td><td>R$${p12.toFixed(2)}</td><td>R$${(stats.c12*p12).toFixed(2)}</td></tr><tr><td>13</td><td>${stats.c13}</td><td>R$${p13.toFixed(2)}</td><td>R$${(stats.c13*p13).toFixed(2)}</td></tr><tr><td>14</td><td>${stats.c14}</td><td>R$${p14.toFixed(2)}</td><td>R$${(stats.c14*p14).toFixed(2)}</td></tr><tr><td>15</td><td>${stats.c15}</td><td>R$${p15.toFixed(2)}</td><td>R$${(stats.c15*p15).toFixed(2)}</td></tr></table>`;let lucroClass=lucro>=0?'lucro-pos':'lucro-neg';h+=`<div class="flex"><div class="card"><b>Custo:</b> <span class="lucro-neg">R$${custo.toFixed(2)}</span></div><div class="card"><b>Ganho:</b> <span class="lucro-pos">R$${ganho.toFixed(2)}</span></div><div class="card"><b>LUCRO ATUAL:</b> <span class="${lucroClass}">R$${lucro.toFixed(2)} ${lucro>=0?'✅ LUCRO':'❌ PREJUÍZO'}</span></div></div><br><b>Detalhamento:</b><br>`;detalhes.forEach(d=>{let cls='';if(d.hits==11) cls='hit11';if(d.hits==12) cls='hit12';if(d.hits>=13) cls='hit13';if(d.hits==14) cls='hit14';if(d.hits==15) cls='hit15';h+=`<div class="jogo ${cls}"><span>${d.idx}: ${d.jogo.map(x=>String(x).padStart(2,'0')).join(',')}</span><span><b>${d.hits} pts</b></span></div>`;});document.getElementById('m8out').innerHTML=h;let rem=`<div class="box"><h3>Remanescentes</h3>Total:${stats.total} 11+:${stats.c11+stats.c12+stats.c13+stats.c14+stats.c15} (${((stats.c11+stats.c12+stats.c13+stats.c14+stats.c15)/stats.total*100).toFixed(1)}%) <11:${stats.total-(stats.c11+stats.c12+stats.c13+stats.c14+stats.c15)}<br>Zero a zero precisa:1x14 R$${p14} ou ${(custo/p11).toFixed(0)}x11<br></div>`;document.getElementById('m8remanescente').innerHTML=rem;window.ultConferencia={stats,custo,ganho,lucro,detalhes,confDez};}
 function conferirHistoricoCompleto(){const jogosTxt=document.getElementById('jogosConferir').value.trim()||document.getElementById('exportJogos').value.trim();if(!jogosTxt){alert('Gere jogos M6');return;}const valorAposta=parseFloat(document.getElementById('valorAposta').value||3.5);const p11=parseFloat(document.getElementById('premio11').value||6);const p12=parseFloat(document.getElementById('premio12').value||12);const p13=parseFloat(document.getElementById('premio13').value||30);const p14=parseFloat(document.getElementById('premio14').value||1000);let linhas=jogosTxt.split('\n').filter(x=>x.trim()).map(l=>parseDez(l)).filter(j=>j.length==15);if(!linhas.length){alert('Nenhum jogo válido');return;}let histResultados=[];hist.forEach(h=>{let stats={c11:0,c12:0,c13:0,c14:0,c15:0};linhas.forEach(j=>{let hits=0;j.forEach(x=>{if(h.dez.includes(x)) hits++;});if(hits==11) stats.c11++;if(hits==12) stats.c12++;if(hits==13) stats.c13++;if(hits==14) stats.c14++;if(hits==15) stats.c15++;});let custo=linhas.length*valorAposta;let ganho=stats.c11*p11+stats.c12*p12+stats.c13*p13+stats.c14*p14;let lucro=ganho-custo;histResultados.push({conc:h.conc,stats,custo,ganho,lucro});});let totalCusto=histResultados.reduce((s,r)=>s+r.custo,0);let totalGanho=histResultados.reduce((s,r)=>s+r.ganho,0);let totalLucro=totalGanho-totalCusto;let h=`<h3>Histórico ${hist.length} concursos - Lucro Remanescente</h3><table><tr><th>Conc</th><th>11</th><th>12</th><th>13</th><th>14</th><th>15</th><th>Custo</th><th>Ganho</th><th>Lucro</th></tr>`;histResultados.slice(-20).forEach(r=>{let cls=r.lucro>=0?'lucro-pos':'lucro-neg';h+=`<tr><td>${r.conc}</td><td>${r.stats.c11}</td><td>${r.stats.c12}</td><td>${r.stats.c13}</td><td>${r.stats.c14}</td><td>${r.stats.c15}</td><td>R$${r.custo.toFixed(2)}</td><td>R$${r.ganho.toFixed(2)}</td><td class="${cls}">R$${r.lucro.toFixed(2)}</td></tr>`;});h+=`</table><div class="flex"><div class="card"><b>Total Custo ${hist.length}:</b> <span class="lucro-neg">R$${totalCusto.toFixed(2)}</span></div><div class="card"><b>Total Ganho:</b> <span class="lucro-pos">R$${totalGanho.toFixed(2)}</span></div><div class="card"><b>LUCRO REMANESCENTE:</b> <span class="${totalLucro>=0?'lucro-pos':'lucro-neg'}">R$${totalLucro.toFixed(2)} ${totalLucro>=0?'✅ LUCRO':'❌ PREJUÍZO'}</span></div></div><br>Média lucro/conc:R$${(totalLucro/hist.length).toFixed(2)} Taxa 11+:${(histResultados.reduce((s,r)=>s+(r.stats.c11+r.stats.c12+r.stats.c13+r.stats.c14+r.stats.c15),0)/(hist.length*linhas.length)*100).toFixed(2)}%`;document.getElementById('m8remanescente').innerHTML=h;}
 function limparConferencia(){document.getElementById('m8out').innerHTML='';document.getElementById('m8remanescente').innerHTML='';}
