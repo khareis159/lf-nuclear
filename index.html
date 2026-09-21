@@ -100,9 +100,10 @@ table{border-collapse:collapse;width:100%;font-size:11px} th,td{border:1px solid
 3781 (16/09/2020) 03,05,06,07,08,09,11,12,13,16,19,21,22,24,25
 3782 (17/09/2020) 03,04,05,07,08,11,15,16,17,18,19,20,22,23,25</textarea>
 <button class="btn btn-green" onclick="importarCola()">📥 IMPORTAR COLA SUJA</button>
-<h3>0.2 Entrada Manual - Adicionar/Editar/Excluir</h3>
-<div class="flex"><input id="nConc" placeholder="Conc 3783" type="number"><input id="nData" placeholder="Data" style="width:150px"><input id="nDez" placeholder="15 dezenas" style="width:350px"></div>
-<button class="btn btn-green" onclick="adicionarConcurso()">➕ ADICIONAR</button><button class="btn btn-yellow" onclick="editarConcurso()">✏️ EDITAR</button><button class="btn btn-red" onclick="excluirConcurso()">🗑️ EXCLUIR</button>
+
+<button class="btn btn-green" onclick="importarCola()">📥 IMPORTAR COLA SUJA</button><button class="btn btn-yellow" onclick="document.getElementById('colaSuja').value='';document.getElementById('colaSuja').focus();">🧹 LIMPAR COLA</button>
+<span style="margin-left:10px;font-size:10px;color:var(--yellow)">Dica: Editar/Excluir agora é direto na tabela abaixo clicando no lápis/lixeira. Mais rápido.</span>
+
 <h3>0.3 Limpeza / Backup / Reset - Recursos Completos</h3>
 <div class="flex"><button class="btn btn-yellow" onclick="limparTudo()">🗑️ LIMPAR HIST</button><button class="btn btn-red" onclick="resetTotal()">💥 RESET TOTAL</button><button class="btn btn-blue" onclick="salvarBackupJSON()">💾 BACKUP JSON</button><button class="btn btn-blue" onclick="document.getElementById('fileBackup').click()">📂 RESTAURAR JSON</button><input type="file" id="fileBackup" style="display:none" accept=".json" onchange="restaurarBackup(this)"><button class="btn btn-purple" onclick="exportarTXT()">📄 EXPORTAR TXT HIST</button><button class="btn btn-purple" onclick="exportarJogosTXT()">📄 EXPORTAR JOGOS</button></div>
 <textarea id="logM0" style="height:60px" placeholder="Log..."></textarea>
