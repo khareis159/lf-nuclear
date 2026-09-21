@@ -379,6 +379,7 @@ function renderJogosLista(txt){
    localStorage.setItem('LF_CONCURSO_DESTINO', String(proxConc));
    localStorage.setItem('LF_QTD_JOGOS', String(linhas.length));
    localStorage.setItem('LF_ULT_HIST', String(ultConc));
+   localStorage.setItem('LF_JOGOS_CONFERIR', document.getElementById('jogosConferir').value);
  }catch(e){}
 
  setTimeout(()=>{ const el=document.getElementById('m8'); if(el) el.scrollIntoView({behavior:'smooth',block:'start'}); }, 600);
@@ -424,7 +425,31 @@ function limparConferencia(){document.getElementById('m8out').innerHTML='';docum
 function copiarExport(){const ta=document.getElementById('exportJogos');ta.select();document.execCommand('copy');alert('Copiado!');logM0('COPIADO');}
 function exportarRelatorioCompleto(){const jogos=document.getElementById('exportJogos').value;const conf=document.getElementById('m8out').innerText;const rem=document.getElementById('m8remanescente').innerText;let rel=`LF NUCLEAR v4.1 REFATORADA RELATÓRIO\nData:${new Date().toLocaleString('pt-BR')}\nHist:${hist.length} Dupla:${duplaOficial?String(duplaOficial.a).padStart(2,'0')+','+String(duplaOficial.b).padStart(2,'0'):'-'}\n\nJOGOS:\n${jogos}\n\nCONF:\n${conf}\n\nREMANESCENTE:\n${rem}\n`;document.getElementById('exportRelatorio').value=rel;const blob=new Blob([rel],{type:'text/plain'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='LF_RELATORIO_'+Date.now()+'.txt';a.click();logM0('RELATÓRIO EXPORTADO');}
 carregarLocal();
-window.onload=()=>{loadTheme();if(hist.length){recalcularMedia3();renderAll();logM0(`CARREGADO ${hist.length}`);}else{importarCola();}};
+window.onload=()=>{
+  loadTheme();
+  if(hist.length){
+    recalcularMedia3();
+    renderAll();
+    // RESTAURA M8 8.1 SE TIVER SALVO
+    try{
+      const salvo = localStorage.getItem('LF_JOGOS_CONFERIR');
+      const qtd = localStorage.getItem('LF_QTD_JOGOS');
+      const concDest = localStorage.getItem('LF_CONCURSO_DESTINO');
+      if(salvo){
+        document.getElementById('jogosConferir').value = salvo;
+        if(qtd && document.getElementById('infoJogosGeradosM8')){
+          document.getElementById('infoJogosGeradosM8').innerText = `(${qtd} jogos)`;
+        }
+        if(concDest && document.getElementById('infoConcDestinoM8')){
+          document.getElementById('infoConcDestinoM8').innerText = `→ Para Concurso ${concDest} (objetivo)`;
+        }
+      }
+    }catch(e){}
+    logM0(`CARREGADO ${hist.length}`);
+  }else{
+    importarCola();
+  }
+};
 
 function enviarParaVolante(){
   let ta=document.getElementById('exportJogos');
