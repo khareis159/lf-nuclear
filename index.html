@@ -147,7 +147,8 @@ Sorteio realizado no ESPAÇO DA SORTE em SÃO PAULO, SP
 <button class="btn btn-green" onclick="conferirJogos()">🔍 CONFERIR - PERDAS/LUCROS</button><button class="btn btn-yellow" onclick="conferirHistoricoCompleto()">📊 CONFERIR HIST 40 - LUCRO REMANESCENTE</button><button class="btn btn-red" onclick="limparConferencia()">🗑️ LIMPAR</button>
 <div id="m8out"></div><div id="m8lucros"></div><div id="m8remanescente"></div>
 </div></div>
-<div id="m9" class="box"><div class="box-header" onclick="toggleBox('m9')"><h2>🟣 M9 - EXPORTAÇÃO FINAL</h2><span>▼</span></div><div class="box-content"><textarea id="exportJogos"></textarea><button class="btn btn-green" onclick="copiarExport()">📋 COPIAR JOGOS</button><button class="btn btn-blue" onclick="exportarRelatorioCompleto()">📄 RELATÓRIO COM LUCROS</button><textarea id="exportRelatorio" style="height:200px"></textarea></div></div>
+<div id="m9" class="box"><div class="box-header" onclick="toggleBox('m9')"><h2>🟣 M9 - EXPORTAÇÃO FINAL</h2><span>▼</span></div><div class="box-content"><textarea id="exportJogos"></textarea><button class="btn btn-green" onclick="copiarExport()">📋 COPIAR JOGOS</button><button class="btn btn-green" onclick="enviarParaVolante()">📤 ENVIAR P/ VOLANTE APP</button>
+<button class="btn btn-blue" onclick="exportarRelatorioCompleto()">📄 RELATÓRIO COM LUCROS</button><textarea id="exportRelatorio" style="height:200px"></textarea></div></div>
 
 <div id="m10" class="box" style="border-color:var(--orange)">
 <div class="box-header" onclick="toggleBox('m10')"><h2>⚙️ M10 - CONFIGURAÇÃO / BACKUP / RESET - ÁREA PERIGOSA <span class="badge badge-red">CUIDADO</span></h2><span>▼</span></div>
@@ -406,6 +407,20 @@ function copiarExport(){const ta=document.getElementById('exportJogos');ta.selec
 function exportarRelatorioCompleto(){const jogos=document.getElementById('exportJogos').value;const conf=document.getElementById('m8out').innerText;const rem=document.getElementById('m8remanescente').innerText;let rel=`LF NUCLEAR v4.1 REFATORADA RELATÓRIO\nData:${new Date().toLocaleString('pt-BR')}\nHist:${hist.length} Dupla:${duplaOficial?String(duplaOficial.a).padStart(2,'0')+','+String(duplaOficial.b).padStart(2,'0'):'-'}\n\nJOGOS:\n${jogos}\n\nCONF:\n${conf}\n\nREMANESCENTE:\n${rem}\n`;document.getElementById('exportRelatorio').value=rel;const blob=new Blob([rel],{type:'text/plain'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='LF_RELATORIO_'+Date.now()+'.txt';a.click();logM0('RELATÓRIO EXPORTADO');}
 carregarLocal();
 window.onload=()=>{loadTheme();if(hist.length){recalcularMedia3();renderAll();logM0(`CARREGADO ${hist.length}`);}else{importarCola();}};
+
+function enviarParaVolante(){
+  let ta=document.getElementById('exportJogos');
+  let txt=ta ? ta.value : '';
+  if(!txt) txt=localStorage.getItem('jogos_atuais')||'';
+  if(!txt){
+    txt=prompt('Cole os jogos aqui (15 nums por linha)')||'';
+  }
+  if(!txt){ alert('Nenhum jogo encontrado'); return; }
+  localStorage.setItem('LF_VOLANTE_COLA', txt);
+  alert('Enviado para Volante App! Abrindo volante...');
+  window.open('https://khareis159.github.io/lf-volante/','_blank');
+}
+
 </script>
 </body>
 </html>
