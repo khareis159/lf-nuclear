@@ -35,6 +35,7 @@ table{border-collapse:collapse;width:100%;font-size:11px} th,td{border:1px solid
 <button class="btn btn-green" onclick="goTo('m7')">🟢 M7 Casco Tartaruga</button>
 <button class="btn btn-red" onclick="goTo('m8')">🔴 M8 Conferência Perdas/Lucros</button>
 <button class="btn btn-purple" onclick="goTo('m9')">🟣 M9 Exportação</button>
+<button class="btn btn-orange" onclick="goTo('m10')">⚙️ M10 Config / Backup / Reset</button>
 <button class="btn btn-orange" onclick="goTo('cartilha')">📘 Cartilha Leigo Tema Claro/Escuro</button>
 <h3 style="color:var(--yellow)">🎨 TEMA</h3>
 <button class="btn btn-green" onclick="toggleTheme()">🌓 Claro/Escuro</button>
@@ -48,6 +49,7 @@ table{border-collapse:collapse;width:100%;font-size:11px} th,td{border:1px solid
 <div><h1>🔬 LF NUCLEAR v4.1 REFATORADA AMPLA - 3 Núcleos + Painéis Deslizantes + Tema Claro/Escuro + Cartilha<br><small>ni(13i) + ni(a;b) Desdobrado + np(12p) - Carlos Alberto Reis 2026</small></h1></div>
 <div style="display:flex;gap:6px;flex-wrap:wrap">
 <button class="btn btn-blue" onclick="toggleSidebar()">☰ PAINÉIS</button>
+<button class="btn btn-orange" onclick="goTo('m10')">⚙️ CONFIG</button>
 <button class="btn btn-green" onclick="toggleTheme()" id="btnTheme">🌙 ESCURO</button>
 <button class="btn btn-yellow" onclick="goTo('cartilha')">📘 CARTILHA</button>
 <div class="pix-box" onclick="copyPix()">💚 Apoio Pix: 61999487649 <span id="pixCopy">📋</span></div>
@@ -105,7 +107,7 @@ table{border-collapse:collapse;width:100%;font-size:11px} th,td{border:1px solid
 <span style="margin-left:10px;font-size:10px;color:var(--yellow)">Dica: Editar/Excluir agora é direto na tabela abaixo clicando no lápis/lixeira. Mais rápido.</span>
 
 <h3>0.3 Limpeza / Backup / Reset - Recursos Completos</h3>
-<div class="flex"><button class="btn btn-yellow" onclick="limparTudo()">🗑️ LIMPAR HIST</button><button class="btn btn-red" onclick="resetTotal()">💥 RESET TOTAL</button><button class="btn btn-blue" onclick="salvarBackupJSON()">💾 BACKUP JSON</button><button class="btn btn-blue" onclick="document.getElementById('fileBackup').click()">📂 RESTAURAR JSON</button><input type="file" id="fileBackup" style="display:none" accept=".json" onchange="restaurarBackup(this)"><button class="btn btn-purple" onclick="exportarTXT()">📄 EXPORTAR TXT HIST</button><button class="btn btn-purple" onclick="exportarJogosTXT()">📄 EXPORTAR JOGOS</button></div>
+
 <textarea id="logM0" style="height:60px" placeholder="Log..."></textarea>
 <div id="m0out"></div>
 </div>
@@ -148,6 +150,25 @@ Sorteio realizado no ESPAÇO DA SORTE em SÃO PAULO, SP
 <div id="m8out"></div><div id="m8lucros"></div><div id="m8remanescente"></div>
 </div></div>
 <div id="m9" class="box"><div class="box-header" onclick="toggleBox('m9')"><h2>🟣 M9 - EXPORTAÇÃO FINAL</h2><span>▼</span></div><div class="box-content"><textarea id="exportJogos"></textarea><button class="btn btn-green" onclick="copiarExport()">📋 COPIAR JOGOS</button><button class="btn btn-blue" onclick="exportarRelatorioCompleto()">📄 RELATÓRIO COM LUCROS</button><textarea id="exportRelatorio" style="height:200px"></textarea></div></div>
+
+<div id="m10" class="box" style="border-color:var(--orange)">
+<div class="box-header" onclick="toggleBox('m10')"><h2>⚙️ M10 - CONFIGURAÇÃO / BACKUP / RESET - ÁREA PERIGOSA <span class="badge badge-red">CUIDADO</span></h2><span>▼</span></div>
+<div class="box-content">
+<div class="cartilha" style="border-color:var(--red)">
+<p><b>Área de configuração.</b> Aqui estão botões que apagam dados. Use com atenção.</p>
+<div class="flex">
+<button class="btn btn-yellow" onclick="if(confirm('Limpar histórico?')) limparTudo()">🗑️ LIMPAR HIST</button>
+<button class="btn btn-red" onclick="if(confirm('RESET TOTAL apaga tudo mesmo?')) resetTotal()">💥 RESET TOTAL</button>
+<button class="btn btn-blue" onclick="salvarBackupJSON()">💾 BACKUP JSON</button>
+<button class="btn btn-blue" onclick="document.getElementById('fileBackup').click()">📂 RESTAURAR JSON</button>
+<input type="file" id="fileBackup" style="display:none" accept=".json" onchange="restaurarBackup(this)">
+<button class="btn btn-purple" onclick="exportarTXT()">📄 EXPORTAR TXT HIST</button>
+<button class="btn btn-purple" onclick="exportarJogosTXT()">📄 EXPORTAR JOGOS</button>
+</div>
+<p style="font-size:10px;color:var(--text2)">Backup JSON salva tudo: histórico + dupla oficial. Restaure quando trocar de celular.</p>
+</div>
+</div>
+</div>
 
 <div id="cartilha" class="box">
 <div class="box-header" onclick="toggleBox('cartilha')"><h2>📘 CARTILHA COMPLETA - PARA USER LEIGO - TEMA CLARO/ESCURO</h2><span>▼</span></div>
