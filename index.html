@@ -410,17 +410,38 @@ window.onload=()=>{loadTheme();if(hist.length){recalcularMedia3();renderAll();lo
 
 function enviarParaVolante(){
   let ta=document.getElementById('exportJogos');
-  let txt=ta ? ta.value : '';
-  if(!txt) txt=localStorage.getItem('jogos_atuais')||'';
+  let txt=ta ? ta.value.trim() : '';
   if(!txt){
-    txt=prompt('Cole os jogos aqui (15 nums por linha)')||'';
+    alert('M9 vazio! Gere jogos no M6/M7 primeiro e exporte para M9');
+    return;
   }
-  if(!txt){ alert('Nenhum jogo encontrado'); return; }
-  localStorage.setItem('LF_VOLANTE_COLA', txt);
-  alert('Enviado para Volante App! Abrindo volante...');
-  window.open('https://khareis159.github.io/lf-volante/','_blank');
-}
+  // Tenta salvar localStorage (só funciona se os 2 sites forem github.io)
+  try{ localStorage.setItem('LF_VOLANTE_COLA', txt); }catch(e){}
 
+  // Copia para área de transferência também
+  try{ navigator.clipboard.writeText(txt); }catch(e){}
+
+  // Mostra instruções e abre manual
+  let link = 'https://khareis159.github.io/lf-volante/';
+  let msg = `✅ ${txt.split('\n').filter(l=>l.trim()).length} jogos copiados!
+
+Se não abrir sozinho:
+1. Abra: ${link}
+2. Cole os jogos lá e clique em IMPORTAR
+
+Os jogos já estão na sua área de transferência (CTRL+V).
+
+Popup liberado? Clique OK para tentar abrir.`;
+  
+  if(confirm(msg)){
+    let win = window.open(link,'_blank');
+    if(!win){
+      // popup bloqueado, abre na mesma aba
+      alert('Popup bloqueado pelo PC! Vou abrir na mesma aba. Use VOLTAR para retornar.');
+      window.location.href = link;
+    }
+  }
+}
 </script>
 </body>
 </html>
